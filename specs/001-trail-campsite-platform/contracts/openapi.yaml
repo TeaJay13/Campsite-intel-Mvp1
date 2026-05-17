@@ -1,0 +1,1041 @@
+openapi: 3.0.3
+info:
+  title: Trail & Campsite Intelligence Platform API
+  version: 1.0.0
+  description: REST API contract for trail/campsite discovery, favorites, reviews, reports, and admin moderation.
+servers:
+  - url: http://localhost:4000
+
+tags:
+  - name: Auth
+  - name: Trails
+  - name: Campsites
+  - name: Reviews
+  - name: Reports
+  - name: Admin
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Start password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "202":
+          description: Reset request accepted
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset completed
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /trails:
+    get:
+      tags: [Trails]
+      summary: List trails with search/filter/pagination
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [easy, moderate, hard]
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated trails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTrails"
+    post:
+      tags: [Trails]
+      summary: Create trail (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrailWrite"
+      responses:
+        "201":
+          description: Trail created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trail"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /trails/{trailId}:
+    get:
+      tags: [Trails]
+      summary: Get trail detail
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      responses:
+        "200":
+          description: Trail detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trail"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      tags: [Trails]
+      summary: Update trail (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrailWrite"
+      responses:
+        "200":
+          description: Trail updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trail"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+    delete:
+      tags: [Trails]
+      summary: Archive trail (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      responses:
+        "204":
+          description: Archived
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+  /trails/{trailId}/reviews:
+    get:
+      tags: [Reviews]
+      summary: List trail reviews
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReviews"
+    post:
+      tags: [Reviews]
+      summary: Create review for trail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewWrite"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntityError"
+
+  /trails/{trailId}/reports:
+    get:
+      tags: [Reports]
+      summary: List trail condition reports
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReports"
+    post:
+      tags: [Reports]
+      summary: Submit trail condition report
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConditionReportWrite"
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionReport"
+
+  /trails/{trailId}/favorite:
+    post:
+      tags: [Trails]
+      summary: Favorite trail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      responses:
+        "201":
+          description: Favorited
+        "409":
+          $ref: "#/components/responses/ConflictError"
+    delete:
+      tags: [Trails]
+      summary: Unfavorite trail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TrailId"
+      responses:
+        "204":
+          description: Unfavorited
+
+  /campsites:
+    get:
+      tags: [Campsites]
+      summary: List campsites with search/filter/pagination
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Search"
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated campsites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCampsites"
+    post:
+      tags: [Campsites]
+      summary: Create campsite (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampsiteWrite"
+      responses:
+        "201":
+          description: Campsite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campsite"
+
+  /campsites/{campsiteId}:
+    get:
+      tags: [Campsites]
+      summary: Get campsite detail
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      responses:
+        "200":
+          description: Campsite detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campsite"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    patch:
+      tags: [Campsites]
+      summary: Update campsite (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampsiteWrite"
+      responses:
+        "200":
+          description: Campsite updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campsite"
+    delete:
+      tags: [Campsites]
+      summary: Archive campsite (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      responses:
+        "204":
+          description: Archived
+
+  /campsites/{campsiteId}/reviews:
+    get:
+      tags: [Reviews]
+      summary: List campsite reviews
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReviews"
+    post:
+      tags: [Reviews]
+      summary: Create review for campsite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewWrite"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /campsites/{campsiteId}/reports:
+    get:
+      tags: [Reports]
+      summary: List campsite condition reports
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReports"
+    post:
+      tags: [Reports]
+      summary: Submit campsite condition report
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConditionReportWrite"
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionReport"
+
+  /campsites/{campsiteId}/favorite:
+    post:
+      tags: [Campsites]
+      summary: Favorite campsite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      responses:
+        "201":
+          description: Favorited
+        "409":
+          $ref: "#/components/responses/ConflictError"
+    delete:
+      tags: [Campsites]
+      summary: Unfavorite campsite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CampsiteId"
+      responses:
+        "204":
+          description: Unfavorited
+
+  /reviews/{reviewId}:
+    patch:
+      tags: [Reviews]
+      summary: Update review (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReviewId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewWrite"
+      responses:
+        "200":
+          description: Review updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+    delete:
+      tags: [Reviews]
+      summary: Delete review (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReviewId"
+      responses:
+        "204":
+          description: Review deleted
+
+  /reports/{reportId}:
+    patch:
+      tags: [Reports]
+      summary: Update report (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConditionReportWrite"
+      responses:
+        "200":
+          description: Report updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConditionReport"
+    delete:
+      tags: [Reports]
+      summary: Delete report (owner or admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "204":
+          description: Report deleted
+
+  /admin/trails:
+    get:
+      tags: [Admin]
+      summary: Admin list of trails including archived
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Trails list for admins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTrails"
+
+  /admin/campsites:
+    get:
+      tags: [Admin]
+      summary: Admin list of campsites including archived
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Campsites list for admins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCampsites"
+
+  /admin/reviews:
+    get:
+      tags: [Admin]
+      summary: Admin review queue and history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Review moderation list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReviews"
+
+  /admin/reports:
+    get:
+      tags: [Admin]
+      summary: Admin report queue and history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Report moderation list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReports"
+
+  /admin/moderation/actions:
+    post:
+      tags: [Admin]
+      summary: Record moderation action
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationRecordWrite"
+      responses:
+        "201":
+          description: Moderation action recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModerationRecord"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+    TrailId:
+      name: trailId
+      in: path
+      required: true
+      schema:
+        type: string
+    CampsiteId:
+      name: campsiteId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReviewId:
+      name: reviewId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnprocessableEntityError:
+      description: Entity validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ConflictError:
+      description: Conflict with existing resource state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, displayName, password]
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [accessToken, user]
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, email, displayName, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+
+    Trail:
+      type: object
+      required:
+        [
+          id,
+          name,
+          location,
+          difficulty,
+          distanceKm,
+          elevationGainM,
+          archiveStatus,
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, moderate, hard]
+        distanceKm:
+          type: number
+        elevationGainM:
+          type: number
+        description:
+          type: string
+        averageRating:
+          type: number
+        reviewCount:
+          type: integer
+        archiveStatus:
+          type: string
+          enum: [active, archived]
+
+    TrailWrite:
+      type: object
+      required:
+        [name, location, difficulty, distanceKm, elevationGainM, description]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, moderate, hard]
+        distanceKm:
+          type: number
+          minimum: 0
+        elevationGainM:
+          type: number
+          minimum: 0
+        description:
+          type: string
+
+    Campsite:
+      type: object
+      required: [id, name, location, archiveStatus]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        accessNotes:
+          type: string
+        description:
+          type: string
+        averageRating:
+          type: number
+        reviewCount:
+          type: integer
+        archiveStatus:
+          type: string
+          enum: [active, archived]
+
+    CampsiteWrite:
+      type: object
+      required: [name, location, description]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        accessNotes:
+          type: string
+        description:
+          type: string
+
+    Review:
+      type: object
+      required: [id, userId, targetType, targetId, rating, comment]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        targetType:
+          type: string
+          enum: [trail, campsite]
+        targetId:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReviewWrite:
+      type: object
+      required: [rating, comment]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          minLength: 1
+
+    ConditionReport:
+      type: object
+      required: [id, userId, targetType, targetId, status, submittedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        targetType:
+          type: string
+          enum: [trail, campsite]
+        targetId:
+          type: string
+        status:
+          type: string
+          enum: [muddy, snowy, blocked, closed]
+        notes:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+
+    ConditionReportWrite:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [muddy, snowy, blocked, closed]
+        notes:
+          type: string
+
+    ModerationRecord:
+      type: object
+      required: [id, actionType, actorAdminId, targetType, targetId, createdAt]
+      properties:
+        id:
+          type: string
+        actionType:
+          type: string
+        actorAdminId:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ModerationRecordWrite:
+      type: object
+      required: [actionType, targetType, targetId]
+      properties:
+        actionType:
+          type: string
+        targetType:
+          type: string
+          enum: [trail, campsite, review, report]
+        targetId:
+          type: string
+        reason:
+          type: string
+
+    PageMeta:
+      type: object
+      required: [page, pageSize, totalItems, totalPages]
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+
+    PaginatedTrails:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Trail"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    PaginatedCampsites:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campsite"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    PaginatedReviews:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+
+    PaginatedReports:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConditionReport"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
