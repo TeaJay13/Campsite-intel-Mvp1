@@ -29,3 +29,33 @@ export class NotFoundError extends AppError {
     this.name = "NotFoundError";
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message = "Authentication required.") {
+    super(message, {
+      statusCode: 401,
+      code: "UNAUTHORIZED",
+    });
+    this.name = "UnauthorizedError";
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "You do not have permission to perform this action.") {
+    super(message, {
+      statusCode: 403,
+      code: "FORBIDDEN",
+    });
+    this.name = "ForbiddenError";
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message) {
+    super(message, {
+      statusCode: 409,
+      code: "CONFLICT",
+    });
+    this.name = "ConflictError";
+  }
+}

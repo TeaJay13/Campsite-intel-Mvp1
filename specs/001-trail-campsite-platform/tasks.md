@@ -8,8 +8,10 @@
 This task list is intentionally limited to a first release with:
 
 - Public browse and detail pages for trails and campsites.
-- Working backend discovery APIs only.
-- No accounts/authentication.
+- Working backend discovery APIs.
+- User authentication: sign up, log in, log out.
+- Responsive UI that works on desktop and mobile.
+- Basic error handling and validation throughout.
 - No favorites, reviews, condition reports, or admin features yet.
 
 ---
@@ -80,7 +82,38 @@ This task list is intentionally limited to a first release with:
 
 ---
 
-## Phase 4: MVP UI Polish (Nice Frontend)
+## Phase 4: User Story 2 - Authentication (MVP)
+
+**Goal**: Users can register, log in, and log out. Protected pages require authentication.
+
+**Independent Test**: User can sign up with a new account, log in, see their session reflected in the nav, and log out.
+
+### Tests for User Story 2
+
+- [x] T037 [P] [US2] Add contract tests for auth endpoints in backend/tests/contract/auth.contract.test.js
+- [x] T038 [P] [US2] Add backend integration tests for register/login/logout in backend/tests/integration/auth.integration.test.js
+- [x] T039 [P] [US2] Add frontend integration tests for auth flows in frontend/tests/integration/auth.integration.test.jsx
+
+### Backend Implementation for User Story 2
+
+- [x] T040 [US2] Implement User model schema and indexes in backend/src/models/user.model.js
+- [x] T041 [US2] Implement auth service (register, login, token generation) in backend/src/services/auth.service.js
+- [x] T042 [US2] Implement JWT auth middleware in backend/src/middleware/auth.middleware.js
+- [x] T043 [US2] Implement auth controller handlers in backend/src/controllers/auth.controller.js
+- [x] T044 [US2] Implement auth routes (POST /auth/register, POST /auth/login, POST /auth/logout) in backend/src/routes/auth.routes.js
+
+### Frontend Implementation for User Story 2
+
+- [x] T045 [US2] Implement auth API client in frontend/src/api/auth-api.js
+- [x] T046 [US2] Implement auth context and session state in frontend/src/contexts/auth-context.jsx
+- [x] T047 [US2] Implement login and register pages in frontend/src/pages/login-page.jsx and frontend/src/pages/register-page.jsx
+- [x] T048 [US2] Update nav to show login/register links and logout button based on session state in frontend/src/main.jsx
+
+**Checkpoint**: Users can register, log in, and log out. Session state is reflected in the UI.
+
+---
+
+## Phase 5: MVP UI Polish (Nice Frontend)
 
 **Purpose**: Ensure the first release feels polished, intentional, and usable on mobile and desktop.
 
@@ -94,7 +127,7 @@ This task list is intentionally limited to a first release with:
 
 ---
 
-## Phase 5: MVP Verification and Release Readiness
+## Phase 6: MVP Verification and Release Readiness
 
 **Purpose**: Validate quality gates relevant to MVP and prepare for first demo/release.
 
@@ -111,7 +144,7 @@ This task list is intentionally limited to a first release with:
 
 These features are intentionally deferred until after MVP is accepted:
 
-- Accounts and authentication (register/login/logout/password reset)
+- Password reset flow
 - Favorites create/remove/list
 - Reviews create/edit/delete
 - Condition reports create/list/recency handling
@@ -123,17 +156,19 @@ These features are intentionally deferred until after MVP is accepted:
 
 ### Phase Dependencies
 
-- Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5
+- Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6
 
 ### Story Dependencies
 
 - US1 starts after Phase 2 only.
+- US2 starts after Phase 2 only (runs in parallel with US1 if desired).
 
 ### Parallel Opportunities
 
 - Phase 2 tasks marked [P] can run in parallel.
 - Phase 3 tests (T017, T018, T019) can run in parallel.
-- Phase 4 styling tasks (T028, T029) can run in parallel.
+- Phase 4 tests (T037, T038, T039) can run in parallel.
+- Phase 5 styling tasks (T028, T029) can run in parallel.
 
 ---
 
@@ -141,6 +176,7 @@ These features are intentionally deferred until after MVP is accepted:
 
 1. Finish Phase 2 foundation.
 2. Implement and validate US1 discovery end-to-end.
-3. Polish UI quality and accessibility.
-4. Run MVP verification and release checks.
-5. Re-open deferred backlog only after MVP acceptance.
+3. Implement and validate US2 auth end-to-end.
+4. Polish UI quality and accessibility.
+5. Run MVP verification and release checks.
+6. Re-open deferred backlog only after MVP acceptance.

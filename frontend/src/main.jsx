@@ -2,8 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { AuthProvider, useAuth } from "./contexts/auth-context.jsx";
 import CampsiteDetailPage from "./pages/campsite-detail-page.jsx";
 import CampsitesPage from "./pages/campsites-page.jsx";
+import LoginPage from "./pages/login-page.jsx";
+import RegisterPage from "./pages/register-page.jsx";
 import TrailDetailPage from "./pages/trail-detail-page.jsx";
 import TrailsPage from "./pages/trails-page.jsx";
 import "./styles/app.css";
@@ -45,6 +48,11 @@ function usePathname() {
   return pathname;
 }
 
+function navigate(path) {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
 function AppRoutes({ pathname }) {
   if (pathname.startsWith("/trails/")) {
     return <TrailDetailPage trailId={pathname.split("/")[2]} />;
@@ -58,7 +66,48 @@ function AppRoutes({ pathname }) {
     return <CampsitesPage />;
   }
 
+  if (pathname === "/login") {
+    return <LoginPage onNavigate={navigate} />;
+  }
+
+  if (pathname === "/register") {
+    return <RegisterPage onNavigate={navigate} />;
+  }
+
   return <TrailsPage />;
+}
+
+function AuthNav() {
+  const { user, logout } = useAuth();
+
+  if (user) {
+    return (
+      <>
+        <span className="nav-user">{user.displayName}</span>
+        <button
+          className="nav-link nav-btn"
+          onClick={async () => {
+            await logout();
+            navigate("/login");
+          }}
+          type="button"
+        >
+          Log out
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <a className="nav-link" data-nav="spa" href="/login">
+        Log in
+      </a>
+      <a className="nav-link" data-nav="spa" href="/register">
+        Sign up
+      </a>
+    </>
+  );
 }
 
 function App() {
@@ -83,6 +132,7 @@ function App() {
           >
             Campsites
           </a>
+          <AuthNav />
         </nav>
       </header>
 
@@ -96,7 +146,9 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );
