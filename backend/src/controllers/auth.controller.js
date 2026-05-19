@@ -54,3 +54,12 @@ export async function getProfile(request, response, next) {
     next(error);
   }
 }
+
+export async function getSavedTrails(request, response, next) {
+  try {
+    const trails = await authService.getSavedTrails(request.user.id);
+    response.status(200).json(trails);
+  } catch (error) {
+    next(error);
+  }
+}

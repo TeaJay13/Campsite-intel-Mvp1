@@ -31,6 +31,8 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "disabled"],
       default: "active",
     },
+    savedTrailIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Trail" }],
+    savedCampsiteIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Campsite" }],
   },
   { timestamps: true },
 );

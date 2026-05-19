@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider, useAuth } from "./contexts/auth-context.jsx";
+import AccountPage from "./pages/account-page.jsx";
 import CampsiteDetailPage from "./pages/campsite-detail-page.jsx";
 import CampsitesPage from "./pages/campsites-page.jsx";
 import LoginPage from "./pages/login-page.jsx";
@@ -74,6 +75,10 @@ function AppRoutes({ pathname }) {
     return <RegisterPage onNavigate={navigate} />;
   }
 
+  if (pathname === "/account") {
+    return <AccountPage />;
+  }
+
   return <TrailsPage />;
 }
 
@@ -83,7 +88,9 @@ function AuthNav() {
   if (user) {
     return (
       <>
-        <span className="nav-user">{user.displayName}</span>
+        <a className="nav-link" data-nav="spa" href="/account">
+          {user.displayName}
+        </a>
         <button
           className="nav-link nav-btn"
           onClick={async () => {

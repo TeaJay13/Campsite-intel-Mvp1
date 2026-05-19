@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
   getProfile,
+  getSavedTrails,
   login,
   logout,
   register,
@@ -16,5 +17,6 @@ router.post("/register", validateRegister, register);
 router.post("/login", validateLogin, login);
 router.post("/logout", logout);
 router.get("/me", requireAuth, getProfile);
+router.get("/me/saved-trails", requireAuth, getSavedTrails);
 
 export default router;

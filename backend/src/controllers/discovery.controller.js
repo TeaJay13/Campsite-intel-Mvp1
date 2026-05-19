@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import { z } from "zod";
 
-import { ValidationError } from "../lib/errors.js";
+import { ConflictError, ValidationError } from "../lib/errors.js";
+import { User } from "../models/user.model.js";
 import { getCampsiteById, listCampsites } from "../services/campsite.service.js";
 import { getTrailById, listTrails } from "../services/trail.service.js";
 
@@ -67,6 +69,64 @@ export async function getCampsiteDetails(request, response, next) {
     const params = parseOrThrow(idParamsSchema, request.params);
     const campsite = await getCampsiteById(params.id);
     response.status(200).json(campsite);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function favoriteTrail(request, response, next) {
+  try {
+    const { id } = parseOrThrow(idParamsSchema, request.params);
+    const result = await User.updateOne(
+      { _id: request.user.id },
+      { $addToSet: { savedTrailIds: new mongoose.Types.ObjectId(id) } },
+    );
+    if (result.matchedCount === 1 && result.modifiedCount === 0) {
+      throw new ConflictError("Trail already saved.");
+    }
+    response.status(201).json({ message: "Trail saved." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function unfavoriteTrail(request, response, next) {
+  try {
+    const { id } = parseOrThrow(idParamsSchema, request.params);
+    await User.updateOne(
+      { _id: request.user.id },
+      { $pull: { savedTrailIds: new mongoose.Types.ObjectId(id) } },
+    );
+    response.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function favoriteCampsite(request, response, next) {
+  try {
+    const { id } = parseOrThrow(idParamsSchema, request.params);
+    const result = await User.updateOne(
+      { _id: request.user.id },
+      { $addToSet: { savedCampsiteIds: new mongoose.Types.ObjectId(id) } },
+    );
+    if (result.matchedCount === 1 && result.modifiedCount === 0) {
+      throw new ConflictError("Campsite already saved.");
+    }
+    response.status(201).json({ message: "Campsite saved." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function unfavoriteCampsite(request, response, next) {
+  try {
+    const { id } = parseOrThrow(idParamsSchema, request.params);
+    await User.updateOne(
+      { _id: request.user.id },
+      { $pull: { savedCampsiteIds: new mongoose.Types.ObjectId(id) } },
+    );
+    response.status(204).send();
   } catch (error) {
     next(error);
   }

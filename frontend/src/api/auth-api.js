@@ -44,3 +44,9 @@ export async function fetchProfile(accessToken) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
+
+export async function fetchSavedTrails(accessToken) {
+  return request("/auth/me/saved-trails", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}

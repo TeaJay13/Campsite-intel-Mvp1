@@ -1,13 +1,23 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { fetchTrailById } from "../api/trails-api.js";
+import { favoriteTrail, fetchTrailById, unfavoriteTrail } from "../api/trails-api.js";
+import { useAuth } from "../contexts/auth-context.jsx";
 
 function TrailDetailPage({ trailId }) {
+  const { user, accessToken, refreshUser } = useAuth();
+
   const trailQuery = useQuery({
     queryKey: ["trail", trailId],
     queryFn: () => fetchTrailById(trailId),
     enabled: Boolean(trailId),
+  });
+
+  const isSaved = user?.savedTrailIds?.includes(trailId);
+
+  const saveMutation = useMutation({
+    mutationFn: () => (isSaved ? unfavoriteTrail(trailId, accessToken) : favoriteTrail(trailId, accessToken)),
+    onSuccess: refreshUser,
   });
 
   if (!trailId) {
@@ -34,6 +44,18 @@ function TrailDetailPage({ trailId }) {
         <span className="meta-pill">Distance: {trail.distanceKm} km</span>
         <span className="meta-pill">Elevation: {trail.elevationGainM} m</span>
       </div>
+
+      {user ? (
+        <button
+          className="btn-primary"
+          disabled={saveMutation.isPending}
+          onClick={() => saveMutation.mutate()}
+        >
+          {saveMutation.isPending ? "Saving..." : isSaved ? "Unsave Trail" : "Save Trail"}
+        </button>
+      ) : (
+        <p className="state-box">Log in to save this trail.</p>
+      )}
 
       <article className="card">
         <h3>About this trail</h3>

@@ -1,13 +1,23 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { fetchCampsiteById } from "../api/campsites-api.js";
+import { favoriteCampsite, fetchCampsiteById, unfavoriteCampsite } from "../api/campsites-api.js";
+import { useAuth } from "../contexts/auth-context.jsx";
 
 function CampsiteDetailPage({ campsiteId }) {
+  const { user, accessToken, refreshUser } = useAuth();
+
   const campsiteQuery = useQuery({
     queryKey: ["campsite", campsiteId],
     queryFn: () => fetchCampsiteById(campsiteId),
     enabled: Boolean(campsiteId),
+  });
+
+  const isSaved = user?.savedCampsiteIds?.includes(campsiteId);
+
+  const saveMutation = useMutation({
+    mutationFn: () => (isSaved ? unfavoriteCampsite(campsiteId, accessToken) : favoriteCampsite(campsiteId, accessToken)),
+    onSuccess: refreshUser,
   });
 
   if (!campsiteId) {
@@ -38,6 +48,18 @@ function CampsiteDetailPage({ campsiteId }) {
           </span>
         ))}
       </div>
+
+      {user ? (
+        <button
+          className="btn-primary"
+          disabled={saveMutation.isPending}
+          onClick={() => saveMutation.mutate()}
+        >
+          {saveMutation.isPending ? "Saving..." : isSaved ? "Unsave Campsite" : "Save Campsite"}
+        </button>
+      ) : (
+        <p className="state-box">Log in to save this campsite.</p>
+      )}
 
       <article className="card">
         <h3>About this campsite</h3>

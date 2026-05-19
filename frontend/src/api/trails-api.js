@@ -28,3 +28,21 @@ export async function fetchTrailById(id) {
   const response = await fetch(`${API_BASE_URL}/trails/${id}`);
   return parseJsonResponse(response);
 }
+
+export async function favoriteTrail(id, token) {
+  const response = await fetch(`${API_BASE_URL}/trails/${id}/favorite`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 201) return;
+  return parseJsonResponse(response);
+}
+
+export async function unfavoriteTrail(id, token) {
+  const response = await fetch(`${API_BASE_URL}/trails/${id}/favorite`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 204) return;
+  return parseJsonResponse(response);
+}

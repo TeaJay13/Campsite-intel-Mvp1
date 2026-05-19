@@ -59,8 +59,19 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function refreshUser() {
+    const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token) return;
+    try {
+      const profile = await fetchProfile(token);
+      setUser(profile);
+    } catch {
+      // ignore refresh errors silently
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, register, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

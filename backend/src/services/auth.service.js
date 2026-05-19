@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import { ConflictError, UnauthorizedError } from "../lib/errors.js";
+import { Trail } from "../models/trail.model.js";
 import { User } from "../models/user.model.js";
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 12;
@@ -85,5 +86,19 @@ export async function getProfile(userId) {
     email: user.email,
     displayName: user.displayName,
     role: user.role,
+    savedTrailIds: (user.savedTrailIds || []).map((id) => id.toString()),
+    savedCampsiteIds: (user.savedCampsiteIds || []).map((id) => id.toString()),
   };
+}
+
+export async function getSavedTrails(userId) {
+  const user = await User.findById(userId).lean();
+  if (!user) throw new UnauthorizedError("User not found.");
+
+  const trails = await Trail.find({
+    _id: { $in: user.savedTrailIds || [] },
+    archiveStatus: "active",
+  }).lean();
+
+  return trails;
 }
